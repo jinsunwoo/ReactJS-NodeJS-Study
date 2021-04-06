@@ -3,6 +3,7 @@ const express = require('express')
 const app = express()
 const port = 5000
 const { User } = require('./models/User')
+const { auth } = require('./models/auth')
 const bodyParser = require('body-parser')
 const cookieParser = require('cookie-parser')
 const config = require("./config/key")
@@ -21,7 +22,7 @@ mongoose.connect(config.mongoURI,{
 app.get('/',(req,res)=>res.send('Hello World'))
 
 // 회원가입에 필요한 정보들을 client 에서 가져오면 그것들을 데이터베이스에 넣어준다
-app.post('/register',(req,res) => {
+app.post('/api/users/register',(req,res) => {
   // req.body 에는 json 형식으로 데이터가 들어있음
   // 위에 Body parser 가 있기 때문에 (req body 이용해서 정보 받는게 가능 from clinet to server)
   const user = new User(req.body)
@@ -31,11 +32,10 @@ app.post('/register',(req,res) => {
     return res.status(200).json({
       success: true
     })
-
   })
 })
 
-app.post('/login',(req,res) => {
+app.post('/api/users/login',(req,res) => {
   // 요청된 이메일을 데이터베이스에서 있는지 찾는다.
   User.findOne({ email: req.body.email },(err,user) => {
     if(!user) {
@@ -64,6 +64,20 @@ app.post('/login',(req,res) => {
 
   })
 
+})
+
+app.get('/api/users/auth', auth ,(req,res) => {
+  // 여기까지 미들웨어를 통과해 왔다는 얘기는 Authentication 이 true 라는 말.
+  res.status(200).json({
+    _id: req.user._id,
+    isAdmin: req.user.role === 0 ? false : true, // role 이 0이 아니면 관리자, 0 이면 일반 유저
+    isAuth: true,
+    email: req.user.email,
+    name: req.user.name,
+    lastname: req.user.lastname,
+    role: req.user.role,
+    image: req.user.image
+  })
 })
 
 app.listen(port,()=>console.log(`Example app listening on port ${port}`))
