@@ -35,22 +35,26 @@ const userSchema = mongoose.Schema({
     }
 })
 
+// parameter 로 next 를 갖고 있다가 
 userSchema.pre('save', function(next) {
+    // this : 전달받은 위의 정보 
     var user = this
 
     // 비밀번호가 변경될때만 암호화 진행 (다른 필드 변경될 때는 이 작업 반복 할 필요 없으니까)
     if(user.isModified('password')) {
         // 비밀번호를 암호화 시킨다.
-    bcrypt.genSalt(saltRounds, function(err, salt) {
-        if(err) return next(err)
-        bcrypt.hash(user.password, salt, function(err, hash) {
-            // 패스워드를 hashed 패스워드로 바꿔줌
+        bcrypt.genSalt(saltRounds, function(err, salt) {
             if(err) return next(err)
-            user.password = hash
-            // index.js 에서 user.save 가 next 임
-            next()
+            // user.password = 전달받은 ex) 12345
+            // 해당 password 에 salt 를 뿌려서 hash 만들어 줌
+            bcrypt.hash(user.password, salt, function(err, hash) {
+                // 패스워드를 hashed 패스워드로 바꿔줌
+                if(err) return next(err)
+                user.password = hash
+                // index.js 에서 user.save 가 next 임
+                next()
+            });
         });
-    });
     } else {
         next()
     }
